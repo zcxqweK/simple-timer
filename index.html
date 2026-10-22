@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>倒计时</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #0a0a0f;
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.container {
+  width: min(90vw, 520px);
+  border-radius: 24px;
+  background: #0f0f1a;
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: clamp(24px, 5vh, 40px) clamp(16px, 4vw, 32px);
+  position: relative;
+  pointer-events: auto;
+}
+
+.time-display {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 2vw, 14px);
+  margin-bottom: clamp(20px, 4vh, 36px);
+}
+
+.digit-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(4px, 1vh, 8px);
+}
+
+.digit {
+  width: clamp(44px, 11vw, 72px);
+  height: clamp(56px, 14vw, 92px);
+  background: #0f0f1a;
+  border: 1.5px solid rgba(120, 120, 180, 0.2);
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: clamp(28px, 7vw, 52px);
+  font-weight: 700;
+  color: rgba(180, 180, 220, 0.85);
+  text-shadow: 0 0 12px rgba(120, 120, 180, 0.25);
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.digit::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.digit.flip {
+  animation: digitFlip 0.25s ease;
+}
+
+@keyframes digitFlip {
+  0% { transform: scaleY(1); opacity: 1; }
+  50% { transform: scaleY(0.6); opacity: 0.5; }
+  100% { transform: scaleY(1); opacity: 1; }
+}
+
+.colon {
+  font-size: clamp(24px, 6vw, 44px);
+  color: rgba(140, 140, 180, 0.5);
+  padding-bottom: clamp(20px, 5vh, 36px);
+  animation: colonBlink 1s step-end infinite;
+}
+
+@keyframes colonBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.btn-circle {
+  width: clamp(32px, 8vw, 48px);
+  height: clamp(32px, 8vw, 48px);
+  border-radius: 50%;
+  border: 1.5px solid rgba(120, 120, 180, 0.3);
+  background: rgba(30, 30, 55, 0.8);
+  color: rgba(160, 160, 210, 0.8);
+  font-size: clamp(14px, 3.5vw, 20px);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.btn-circle:hover {
+  background: rgba(50, 50, 90, 0.9);
+  border-color: rgba(140, 140, 200, 0.5);
+  transform: scale(1.1);
+}
+
+.btn-circle:active {
+  transform: scale(0.92);
+  background: rgba(60, 60, 100, 0.9);
+}
+
+.start-btn {
+  margin-top: clamp(16px, 4vh, 28px);
+  width: clamp(80px, 20vw, 120px);
+  height: clamp(80px, 20vw, 120px);
+  border-radius: 50%;
+  border: 2px solid rgba(120, 180, 140, 0.4);
+  background: rgba(20, 40, 30, 0.8);
+  color: rgba(140, 210, 160, 0.9);
+  font-size: clamp(14px, 3.5vw, 20px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  letter-spacing: 2px;
+}
+
+.start-btn:hover {
+  background: rgba(30, 60, 45, 0.9);
+  border-color: rgba(140, 210, 160, 0.6);
+  box-shadow: 0 0 20px rgba(100, 180, 130, 0.2);
+  transform: scale(1.05);
+}
+
+.start-btn:active {
+  transform: scale(0.95);
+}
+
+.settings-btn {
+  position: absolute;
+  top: clamp(12px, 3vh, 20px);
+  right: clamp(12px, 3vw, 20px);
+  width: clamp(32px, 7vw, 40px);
+  height: clamp(32px, 7vw, 40px);
+  border-radius: 50%;
+  border: 1.5px solid rgba(120, 120, 180, 0.3);
+  background: rgba(30, 30, 55, 0.8);
+  color: rgba(160, 160, 210, 0.8);
+  font-size: clamp(14px, 3.5vw, 18px);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  z-index: 10;
+}
+
+.settings-btn:hover {
+  transform: rotate(45deg) scale(1.1);
+  background: rgba(50, 50, 90, 0.9);
+}
+
+.settings-btn:active {
+  transform: rotate(45deg) scale(0.95);
+}
+
+.settings-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 2000;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.settings-dialog.active {
+  display: flex;
+  animation: fsFadeIn 0.3s ease;
+}
+
+.settings-box {
+  background: #12121f;
+  border: 1.5px solid rgba(120, 120, 180, 0.3);
+  border-radius: 16px;
+  padding: clamp(20px, 5vw, 32px);
+  max-width: 85vw;
+  min-width: 280px;
+}
+
+.settings-box h3 {
+  color: rgba(200, 200, 230, 0.9);
+  font-size: clamp(14px, 3.5vw, 18px);
+  margin-bottom: clamp(12px, 3vw, 16px);
+  text-align: center;
+}
+
+.mode-row {
+  display: flex;
+  gap: clamp(6px, 1.5vw, 10px);
+  margin-bottom: clamp(12px, 3vw, 16px);
+  justify-content: center;
+}
+.mode-btn {
+  padding: clamp(6px, 1.5vh, 8px) clamp(16px, 4vw, 24px);
+  border-radius: 20px;
+  border: 1.5px solid rgba(120, 120, 180, 0.3);
+  background: rgba(30, 30, 55, 0.8);
+  color: rgba(160, 160, 210, 0.8);
+  font-size: clamp(12px, 3vw, 14px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mode-btn.active {
+  border-color: rgba(120, 180, 140, 0.5);
+  background: rgba(20, 40, 30, 0.8);
+  color: rgba(140, 210, 160, 0.9);
+}
+
+.display-row {
+  display: flex;
+  gap: clamp(6px, 1.5vw, 10px);
+  margin-bottom: clamp(12px, 3vw, 16px);
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.display-btn {
+  padding: clamp(5px, 1.2vh, 7px) clamp(10px, 2.5vw, 16px);
+  border-radius: 16px;
+  border: 1.5px solid rgba(120, 120, 180, 0.3);
+  background: rgba(30, 30, 55, 0.8);
+  color: rgba(160, 160, 210, 0.8);
+  font-size: clamp(11px, 2.8vw, 13px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.display-btn.active {
+  border-color: rgba(120, 180, 140, 0.5);
+  background: rgba(20, 40, 30, 0.8);
+  color: rgba(140, 210, 160, 0.9);
+}
+
+.custom-section, .theme-section {
+  display: contents;
+}
+.hidden { display: none !important; }
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: clamp(12px, 3vw, 16px);
+  gap: 12px;
+}
+
+.settings-row label {
+  color: rgba(180, 180, 220, 0.8);
+  font-size: clamp(12px, 3vw, 15px);
+  white-space: nowrap;
+}
+
+.lang-display-btn {
+  color: rgba(140, 210, 160, 0.9);
+  font-size: clamp(12px, 3vw, 15px);
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lang-display-btn:hover {
+  background: rgba(140, 210, 160, 0.1);
+  transform: scale(1.05);
+}
+
+.lang-display-btn:active {
+  transform: scale(0.95);
+}
+
+.color-options {
+  display: flex;
+  gap: clamp(6px, 1.5vw, 10px);
+}
+
+.color-dot {
+  width: clamp(24px, 6vw, 32px);
+  height: clamp(24px, 6vw, 32px);
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.color-dot:hover {
+  transform: scale(1.15);
+}
+
+.color-dot.selected {
+  border-color: rgba(255,255,255,0.9);
+  box-shadow: 0 0 10px rgba(255,255,255,0.3);
+  transform: scale(1.15);
+}
+
+.settings-done {
+  display: block;
+  margin: 0 auto;
+  padding: clamp(8px, 2vh, 12px) clamp(24px, 6vw, 40px);
+  border-radius: 24px;
+  border: 1.5px solid rgba(120, 180, 140, 0.4);
+  background: rgba(20, 40, 30, 0.8);
+  color: rgba(140, 210, 160, 0.9);
+  font-size: clamp(13px, 3vw, 16px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.settings-done:hover {
+  background: rgba(30, 60, 45, 0.9);
+  transform: scale(1.05);
+}
+
+.settings-done:active {
+  transform: scale(0.95);
+}
+
+.lang-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2100;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.lang-dialog.active {
+  display: flex;
+  animation: fsFadeIn 0.3s ease;
+}
+
+.lang-box {
+  background: #12121f;
+  border: 1.5px solid rgba(120, 120, 180, 0.3);
+  border-radius: 16px;
+  padding: clamp(20px, 5vw, 32px);
+  text-align: center;
+  max-width: 80vw;
+  min-width: 260px;
+  animation: dialogPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.lang-box h3 {
+  color: rgba(200, 200, 230, 0.9);
+  font-size: clamp(14px, 3.5vw, 18px);
+  margin-bottom: clamp(16px, 4vw, 20px);
+}
+
+.lang-options {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 2vw, 12px);
+  margin-bottom: clamp(16px, 4vw, 24px);
+}
+
+.lang-option {
+  padding: clamp(10px, 2.5vh, 14px) clamp(16px, 4vw, 24px);
+  border-radius: 12px;
+  border: 1.5px solid rgba(120, 120, 180, 0.3);
+  background: rgba(30, 30, 55, 0.8);
+  color: rgba(180, 180, 220, 0.9);
+  font-size: clamp(13px, 3vw, 16px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lang-option:hover {
+  background: rgba(50, 50, 90, 0.9);
+  border-color: rgba(140, 210, 160, 0.4);
+  transform: scale(1.02);
+}
+
+.lang-option:active {
+  transform: scale(0.98);
+}
+
+.lang-option.selected {
+  border-color: rgba(140, 210, 160, 0.6);
+  background: rgba(20, 60, 45, 0.8);
+  color: rgba(140, 210, 160, 0.95);
+}
+
+.lang-confirm-btn {
+  padding: clamp(8px, 2vh, 12px) clamp(24px, 6vw, 40px);
+  border-radius: 24px;
+  border: 1.5px solid rgba(120, 180, 140, 0.4);
+  background: rgba(20, 40, 30, 0.8);
+  color: rgba(140, 210, 160, 0.9);
+  font-size: clamp(13px, 3vw, 16px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lang-confirm-btn:hover {
+  background: rgba(30, 60, 45, 0.9);
+  transform: scale(1.05);
+}
+
+.lang-confirm-btn:active {
+  transform: scale(0.95);
+}
+
+.lang-confirm-dialog {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2200;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.lang-confirm-dialog.active {
+  display: flex;
+  animation: fsFadeIn 0.3s ease;
+}
+
+#themeGlowLayer {
+  position: fixed;
+  inset: -10%;
+  pointer-events: none;
+  z-index: 998;
+  opacity: 0;
+  display: none;
+  mix-blend-mode: screen;
+}
+
+#themeGlowLayer.active {
+  display: block;
+  opacity: 1;
+}
+
+.fluid-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.6;
+}
+
+.fluid-blob:nth-child(1) {
+  width: 80%; height: 80%;
+  top: 10%; left: 5%;
+  background: radial-gradient(circle, rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.8) 0%, transparent 70%);
+  animation: fluidDrift1 8s ease-in-out infinite;
+}
+
+.fluid-blob:nth-child(2) {
+  width: 60%; height: 60%;
+  top: 30%; right: 5%;
+  background: radial-gradient(circle, rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.6) 0%, transparent 70%);
+  animation: fluidDrift2 6s ease-in-out infinite;
+}
+
+.fluid-blob:nth-child(3) {
+  width: 70%; height: 70%;
+  bottom: 5%; left: 20%;
+  background: radial-gradient(circle, rgba(var(--theme-r), var(--theme-g), var(--theme-b), 0.5) 0%, transparent 70%);
+  animation: fluidDrift3 10s ease-in-out infinite;
+}
+
+@keyframes fluidDrift1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(15%, 10%) scale(1.1); }
+  66% { transform: translate(-10%, 15%) scale(0.95); }
+}
+
+@keyframes fluidDrift2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-20%, -15%) scale(1.15); }
+}
+
+@keyframes fluidDrift3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(10%, -20%) scale(1.05); }
+  75% { transform: translate(-15%, 5%) scale(0.9); }
+}
+
+#progressBar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: clamp(8px, 1.5vh, 12px);
+  transition: background 0.5s ease;
+  z-index: 1003;
+  border-radius: 0 0 4px 0;
+  opacity: 0;
+}
+#progressBar.active { opacity: 1; }
+
+.fullscreen {
+  position: fixed;
+  inset: 0;
+  background: #050508;
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.fullscreen.active {
+  display: flex;
+  animation: fsFadeIn 0.4s ease;
+}
+
+@keyframes fsFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes dialogPop {
+  0% { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.screen-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 999;
+  transition: box-shadow 0.5s ease;
+}
+
+.fs-time {
+  font-size: clamp(60px, 18vw, 180px);
+  font-weight: 700;
+  color: rgba(160, 160, 210, 0.8);
+  text-shadow: 0 0 30px rgba(100, 100, 180, 0.2);
+  letter-spacing: 4px;
+  z-index: 1001;
+  transition: color 0.5s ease, text-shadow 0.5s ease;
+}
+
+@keyframes blinkBreathe {
+  0%   { transform: scale(1);    filter: brightness(1); }
+  50%  { transform: scale(1.05); filter: brightness(0.7); }
+  100% { transform: scale(1);    filter: brightness(1); }
+}
+
+.fs-time.blink-breathe {
+  animation: blinkBreathe 1600ms ease-in-out infinite;
+}
+
+.exit-btn {
+  position: absolute;
+  top: clamp(12px, 3vh, 24px);
+  right: clamp(12px, 3vw, 24px);
+  width: clamp(40px, 10vw, 56px);
+  height: clamp(40px, 10vw, 56px);
+  border-radius: 50%;
+  border: 1.5px solid rgba(180, 100, 100, 0.4);
+  background: rgba(40, 15, 15, 0.8);
+  color: rgba(220, 140, 140, 0.9);
+  font-size: clamp(16px, 4vw, 22px);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.15s ease;
+  z-index: 1002;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.exit-btn:hover {
+  background: rgba(60, 20, 20, 0.9);
+  transform: scale(1.1);
+}
+
+.exit-btn:active {
+  transform: scale(0.9);
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: none;
+  justify-content: center;
+  align-items: center;
+}
+
+.dialog-overlay.active {
+  display: flex;
+  animation: fsFadeIn 0.3s ease;
+}
+
+.dialog-box {
+  background: #12121f;
+  border: 1.5px solid rgba(120, 120, 180, 0.3);
+  border-radius: 16px;
+  padding: clamp(20px, 5vw, 32px);
+  text-align: center;
+  max-width: 80vw;
+  animation: dialogPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.dialog-box p {
+  color: rgba(200, 200, 230, 0.9);
+  font-size: clamp(14px, 3.5vw, 18px);
+  margin-bottom: clamp(16px, 4vw, 24px);
+}
+
+.dialog-btns {
+  display: flex;
+  gap: clamp(12px, 3vw, 20px);
+  justify-content: center;
+}
+
+.dialog-btn {
+  padding: clamp(8px, 2vh, 12px) clamp(20px, 5vw, 32px);
+  border-radius: 24px;
+  border: 1.5px solid rgba(120, 120, 180, 0.4);
+  background: rgba(30, 30, 55, 0.9);
+  color: rgba(180, 180, 220, 0.9);
+  font-size: clamp(13px, 3vw, 16px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dialog-btn:hover {
+  background: rgba(50, 50, 90, 0.9);
+  transform: scale(1.05);
+}
+
+.dialog-btn:active {
+  transform: scale(0.95);
+}
+
+.dialog-btn.confirm {
+  border-color: rgba(180, 100, 100, 0.5);
+  background: rgba(60, 20, 20, 0.9);
+  color: rgba(220, 160, 160, 0.95);
+}
+
+.dialog-btn.confirm:hover {
+  background: rgba(80, 30, 30, 0.9);
+}
+
+@media (max-width: 480px) {
+  .container { width: 92vw; }
+}
+
+@media (max-width: 360px) {
+  .digit {
+    width: 38px; height: 50px;
+    font-size: 24px; border-radius: 8px;
+  }
+  .colon { font-size: 20px; }
+}
+
+@media (min-width: 1600px) {
+  .container { width: 560px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container" id="container">
+  <button class="settings-btn" id="settingsBtn">⚙</button>
+  <div class="time-display">
+    <div class="digit-group">
+      <button class="btn-circle" id="minTenUp">▲</button>
+      <div class="digit" id="minTen">0</div>
+      <button class="btn-circle" id="minTenDown">▼</button>
+    </div>
+    <div class="digit-group">
+      <button class="btn-circle" id="minOneUp">▲</button>
+      <div class="digit" id="minOne">5</div>
+      <button class="btn-circle" id="minOneDown">▼</button>
+    </div>
+    <div class="colon">:</div>
+    <div class="digit-group">
+      <button class="btn-circle" id="secTenUp">▲</button>
+      <div class="digit" id="secTen">0</div>
+      <button class="btn-circle" id="secTenDown">▼</button>
+    </div>
+    <div class="digit-group">
+      <button class="btn-circle" id="secOneUp">▲</button>
+      <div class="digit" id="secOne">0</div>
+      <button class="btn-circle" id="secOneDown">▼</button>
+    </div>
+  </div>
+  <button class="start-btn" id="startBtn">开始</button>
+</div>
+
+<div class="settings-dialog" id="settingsDialog">
+  <div class="settings-box">
+    <h3 id="settingsTitle">设置</h3>
+    <div class="settings-row">
+      <label id="langLabel">语言</label>
+      <button class="lang-display-btn" id="langDisplayBtn"></button>
+    </div>
+    <div class="mode-row">
+      <button class="mode-btn active" data-mode="custom" id="modeCustom">自定义</button>
+      <button class="mode-btn" data-mode="theme" id="modeTheme">主题色</button>
+    </div>
+    <div class="display-row" id="displayRow">
+      <button class="display-btn active" data-display="glow">光晕</button>
+      <button class="display-btn" data-display="fluid">流体</button>
+      <button class="display-btn" data-display="progress">进度条</button>
+    </div>
+    <div class="custom-section" id="customSection">
+      <div class="settings-row">
+        <label id="glowLabel">光晕颜色</label>
+        <div class="color-options" id="glowColors"></div>
+      </div>
+      <div class="settings-row">
+        <label id="textLabel">文字颜色</label>
+        <div class="color-options" id="textColors"></div>
+      </div>
+    </div>
+    <div class="theme-section hidden" id="themeSection">
+      <div class="settings-row">
+        <label id="themeLabel">主题色</label>
+        <div class="color-options" id="themeColors"></div>
+      </div>
+    </div>
+    <button class="settings-done" id="settingsDone">完成</button>
+  </div>
+</div>
+
+<div class="lang-dialog" id="langDialog">
+  <div class="lang-box">
+    <h3 id="langDialogTitle">选择语言</h3>
+    <div class="lang-options" id="langOptions"></div>
+    <div class="dialog-btns" style="margin-top: clamp(12px, 3vw, 20px);">
+      <button class="dialog-btn" id="langCancelBtn">取消</button>
+      <button class="lang-confirm-btn" id="langConfirmBtn">确认</button>
+    </div>
+  </div>
+</div>
+
+<div class="lang-confirm-dialog" id="langConfirmDialog">
+  <div class="dialog-box">
+    <p id="langConfirmText">确定修改语言吗？</p>
+    <div class="dialog-btns">
+      <button class="dialog-btn" id="langConfirmNo">取消</button>
+      <button class="dialog-btn confirm" id="langConfirmYes">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="fullscreen" id="fullscreen">
+  <div class="screen-glow" id="screenGlow"></div>
+  <div id="themeGlowLayer">
+    <div class="fluid-blob"></div>
+    <div class="fluid-blob"></div>
+    <div class="fluid-blob"></div>
+  </div>
+  <div id="progressBar"></div>
+  <button class="exit-btn" id="exitBtn">✕</button>
+  <div class="fs-time" id="fsTime">05:00</div>
+</div>
+
+<div class="dialog-overlay" id="endDialog">
+  <div class="dialog-box">
+    <p id="endText">时间到！是否退出全屏？</p>
+    <div class="dialog-btns">
+      <button class="dialog-btn" id="endNo">取消</button>
+      <button class="dialog-btn confirm" id="endYes">退出</button>
+    </div>
+  </div>
+</div>
+
+<div class="dialog-overlay" id="confirmDialog">
+  <div class="dialog-box">
+    <p id="confirmText">倒计时尚未结束，确认退出？</p>
+    <div class="dialog-btns">
+      <button class="dialog-btn" id="confirmNo">取消</button>
+      <button class="dialog-btn confirm" id="confirmYes">确认退出</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const minTenEl = document.getElementById('minTen');
+const minOneEl = document.getElementById('minOne');
+const secTenEl = document.getElementById('secTen');
+const secOneEl = document.getElementById('secOne');
+const startBtn = document.getElementById('startBtn');
+const fullscreen = document.getElementById('fullscreen');
+const fsTime = document.getElementById('fsTime');
+const exitBtn = document.getElementById('exitBtn');
+const screenGlow = document.getElementById('screenGlow');
+const themeGlowLayer = document.getElementById('themeGlowLayer');
+const progressBar = document.getElementById('progressBar');
+const endDialog = document.getElementById('endDialog');
+const endYes = document.getElementById('endYes');
+const endNo = document.getElementById('endNo');
+const confirmDialog = document.getElementById('confirmDialog');
+const confirmYes = document.getElementById('confirmYes');
+const confirmNo = document.getElementById('confirmNo');
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsDialog = document.getElementById('settingsDialog');
+const settingsDone = document.getElementById('settingsDone');
+const glowColorsEl = document.getElementById('glowColors');
+const textColorsEl = document.getElementById('textColors');
+const themeColorsEl = document.getElementById('themeColors');
+const customSection = document.getElementById('customSection');
+const themeSection = document.getElementById('themeSection');
+const displayRow = document.getElementById('displayRow');
+const langDisplayBtn = document.getElementById('langDisplayBtn');
+const langDialog = document.getElementById('langDialog');
+const langOptions = document.getElementById('langOptions');
+const langConfirmBtn = document.getElementById('langConfirmBtn');
+const langCancelBtn = document.getElementById('langCancelBtn');
+const langConfirmDialog = document.getElementById('langConfirmDialog');
+const langConfirmYes = document.getElementById('langConfirmYes');
+const langConfirmNo = document.getElementById('langConfirmNo');
+
+const glowColorMap = {
+  green:  [100, 200, 130],
+  blue:   [80, 160, 240],
+  purple: [160, 100, 240],
+  orange: [240, 160, 60],
+  red:    [220, 80, 80]
+};
+
+const textColorMap = {
+  blue:   [160, 160, 210],
+  white:  [220, 220, 240],
+  green:  [140, 210, 160],
+  cyan:   [120, 200, 220],
+  purple: [180, 140, 240]
+};
+
+const themeColorMap = {
+  green:  { rgb: [76, 175, 80],   text: [168, 230, 192] },
+  blue:   { rgb: [33, 150, 243],  text: [165, 214, 255] },
+  purple: { rgb: [156, 39, 176],  text: [225, 190, 231] },
+  orange: { rgb: [255, 152, 0],   text: [255, 224, 178] },
+  red:    { rgb: [244, 67, 54],   text: [255, 205, 210] }
+};
+
+let glowColor = 'green';
+let textColor = 'white';
+let colorMode = 'custom';
+let themeColor = 'green';
+let displayMode = 'glow';
+
+const browserLang = navigator.language || 'zh-CN';
+let currentLangKey = 'cn';
+if (browserLang === 'zh-TW' || browserLang === 'zh-HK') {
+  currentLangKey = 'tw';
+} else if (browserLang.startsWith('zh')) {
+  currentLangKey = 'cn';
+} else {
+  currentLangKey = 'en';
+}
+
+const i18n = {
+  cn: {
+    settingsTitle: '设置', langDisplay: '简体中文', langDialogTitle: '选择语言',
+    glowLabel: '光晕颜色', textLabel: '文字颜色', themeLabel: '主题色',
+    modeCustom: '自定义', modeTheme: '主题色', settingsDone: '完成',
+    startBtn: '开始',
+    endText: '时间到！是否退出全屏？', endNo: '取消', endYes: '退出',
+    confirmText: '倒计时尚未结束，确认退出？', confirmNo: '取消', confirmYes: '确认退出',
+    langConfirmText: '确定修改语言吗？', langConfirmNo: '取消', langConfirmYes: '确定'
+  },
+  tw: {
+    settingsTitle: '設定', langDisplay: '繁體中文', langDialogTitle: '選擇語言',
+    glowLabel: '光暈顏色', textLabel: '文字顏色', themeLabel: '主題色',
+    modeCustom: '自定義', modeTheme: '主題色', settingsDone: '完成',
+    startBtn: '開始',
+    endText: '時間到！是否退出全屏？', endNo: '取消', endYes: '退出',
+    confirmText: '倒數計時尚未結束，確認退出？', confirmNo: '取消', confirmYes: '確認退出',
+    langConfirmText: '確定修改語言嗎？', langConfirmNo: '取消', langConfirmYes: '確定'
+  },
+  en: {
+    settingsTitle: 'Settings', langDisplay: 'English', langDialogTitle: 'Select Language',
+    glowLabel: 'Glow Color', textLabel: 'Text Color', themeLabel: 'Theme Color',
+    modeCustom: 'Custom', modeTheme: 'Theme', settingsDone: 'Done',
+    startBtn: 'Start',
+    endText: 'Time\'s up! Exit fullscreen?', endNo: 'Cancel', endYes: 'Exit',
+    confirmText: 'Timer is still running. Exit anyway?', confirmNo: 'Cancel', confirmYes: 'Exit',
+    langConfirmText: 'Are you sure you want to change the language?', langConfirmNo: 'Cancel', langConfirmYes: 'Confirm'
+  }
+};
+
+const langLabels = { cn: '简体中文', tw: '繁體中文', en: 'English' };
+const langOrder = ['cn', 'tw', 'en'];
+let pendingLangKey = currentLangKey;
+
+function applyI18n() {
+  const T = i18n[currentLangKey];
+  document.getElementById('settingsTitle').textContent = T.settingsTitle;
+  langDisplayBtn.textContent = T.langDisplay;
+  document.getElementById('langDialogTitle').textContent = T.langDialogTitle;
+  document.getElementById('glowLabel').textContent = T.glowLabel;
+  document.getElementById('textLabel').textContent = T.textLabel;
+  document.getElementById('themeLabel').textContent = T.themeLabel;
+  document.getElementById('modeCustom').textContent = T.modeCustom;
+  document.getElementById('modeTheme').textContent = T.modeTheme;
+  document.getElementById('settingsDone').textContent = T.settingsDone;
+  startBtn.textContent = T.startBtn;
+  document.getElementById('endText').textContent = T.endText;
+  endNo.textContent = T.endNo;
+  endYes.textContent = T.endYes;
+  document.getElementById('confirmText').textContent = T.confirmText;
+  confirmNo.textContent = T.confirmNo;
+  confirmYes.textContent = T.confirmYes;
+  document.getElementById('langConfirmText').textContent = T.langConfirmText;
+  langConfirmNo.textContent = T.langConfirmNo;
+  langConfirmYes.textContent = T.langConfirmYes;
+}
+
+function openLangDialog() {
+  pendingLangKey = currentLangKey;
+  langOptions.innerHTML = '';
+  langOrder.forEach(key => {
+    const opt = document.createElement('button');
+    opt.className = 'lang-option' + (key === pendingLangKey ? ' selected' : '');
+    opt.textContent = langLabels[key];
+    opt.onclick = () => {
+      langOptions.querySelectorAll('.lang-option').forEach(o => o.classList.remove('selected'));
+      opt.classList.add('selected');
+      pendingLangKey = key;
+    };
+    langOptions.appendChild(opt);
+  });
+  langDialog.classList.add('active');
+}
+
+langDisplayBtn.onclick = (e) => { e.stopPropagation(); openLangDialog(); };
+langCancelBtn.onclick = () => { langDialog.classList.remove('active'); langConfirmDialog.classList.remove('active'); };
+
+langConfirmBtn.onclick = () => {
+  if (pendingLangKey === currentLangKey) { langDialog.classList.remove('active'); return; }
+  langConfirmDialog.classList.add('active');
+};
+
+langConfirmDialog.addEventListener('click', (e) => {
+  if (e.target === langConfirmDialog) langConfirmDialog.classList.remove('active');
+});
+
+langConfirmYes.onclick = () => {
+  currentLangKey = pendingLangKey;
+  applyI18n();
+  langDialog.classList.remove('active');
+  langConfirmDialog.classList.remove('active');
+};
+
+langConfirmNo.onclick = () => { langConfirmDialog.classList.remove('active'); };
+
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    colorMode = btn.dataset.mode;
+    if (colorMode === 'theme') {
+      customSection.classList.add('hidden');
+      themeSection.classList.remove('hidden');
+      displayRow.classList.add('hidden');
+      applyThemeColor();
+    } else {
+      customSection.classList.remove('hidden');
+      themeSection.classList.add('hidden');
+      displayRow.classList.remove('hidden');
+      applyCustomColors();
+    }
+  };
+});
+
+document.querySelectorAll('.display-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.display-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    displayMode = btn.dataset.display;
+  };
+});
+
+function buildColorOptions(container, colorMap, currentKey, onSelect) {
+  container.innerHTML = '';
+  Object.entries(colorMap).forEach(([key, val]) => {
+    const rgb = Array.isArray(val) ? val : val.rgb;
+    const dot = document.createElement('div');
+    dot.className = 'color-dot' + (key === currentKey ? ' selected' : '');
+    dot.style.background = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
+    dot.addEventListener('click', () => {
+      container.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+      dot.classList.add('selected');
+      onSelect(key);
+    });
+    container.appendChild(dot);
+  });
+}
+
+buildColorOptions(glowColorsEl, glowColorMap, glowColor, (key) => { glowColor = key; });
+buildColorOptions(textColorsEl, textColorMap, textColor, (key) => { textColor = key; });
+buildColorOptions(themeColorsEl, themeColorMap, themeColor, (key) => { themeColor = key; applyThemeColor(); });
+
+settingsBtn.onclick = () => { settingsDialog.classList.add('active'); };
+settingsDone.onclick = () => { settingsDialog.classList.remove('active'); };
+settingsDialog.addEventListener('click', (e) => {
+  if (e.target === settingsDialog) settingsDialog.classList.remove('active');
+});
+
+let minTen = 0, minOne = 5, secTen = 0, secOne = 0;
+let running = false;
+let totalSeconds = 0;
+let initialTotalSeconds = 0;
+let startTime = 0;
+let rafId = null;
+let lastTickSecond = -1;
+let audioCtx = null;
+let progressRafId = null;
+
+// ── 优化1：AudioBuffer 预渲染，避免每帧创建 Oscillator ──
+let tickBuffer = null;
+let finalBeepBuffer = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    tickBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.12, audioCtx.sampleRate);
+    const data = tickBuffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) {
+      const t = i / audioCtx.sampleRate;
+      data[i] = Math.sin(2 * Math.PI * 880 * t) * Math.exp(-t * 30) * 0.25;
+    }
+    finalBeepBuffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.7, audioCtx.sampleRate);
+    const data2 = finalBeepBuffer.getChannelData(0);
+    for (let i = 0; i < data2.length; i++) {
+      const t = i / audioCtx.sampleRate;
+      const freq = 440 * Math.exp(t * 0.8);
+      data2[i] = Math.sin(2 * Math.PI * freq * t) * Math.exp(-t * 3) * 0.35;
+    }
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function playTick() {
+  if (!audioCtx || !tickBuffer) return;
+  const source = audioCtx.createBufferSource();
+  source.buffer = tickBuffer;
+  source.connect(audioCtx.destination);
+  source.start();
+}
+
+function playFinalBeep() {
+  if (!audioCtx || !finalBeepBuffer) return;
+  const source = audioCtx.createBufferSource();
+  source.buffer = finalBeepBuffer;
+  source.connect(audioCtx.destination);
+  source.start();
+}
+
+function flipDigit(el) {
+  el.classList.remove('flip');
+  void el.offsetWidth;
+  el.classList.add('flip');
+}
+
+function updateDisplay() {
+  minTenEl.textContent = minTen;
+  minOneEl.textContent = minOne;
+  secTenEl.textContent = secTen;
+  secOneEl.textContent = secOne;
+}
+
+function updateFsDisplay() {
+  fsTime.textContent = `${minTen}${minOne}:${secTen}${secOne}`;
+}
+
+function adjust(digit, max, delta) {
+  digit += delta;
+  if (digit > max) digit = 0;
+  if (digit < 0) digit = max;
+  return digit;
+}
+
+document.getElementById('minTenUp').onclick = () => { if (!running) { minTen = adjust(minTen, 5, 1); flipDigit(minTenEl); updateDisplay(); } };
+document.getElementById('minTenDown').onclick = () => { if (!running) { minTen = adjust(minTen, 5, -1); flipDigit(minTenEl); updateDisplay(); } };
+document.getElementById('minOneUp').onclick = () => { if (!running) { minOne = adjust(minOne, 9, 1); flipDigit(minOneEl); updateDisplay(); } };
+document.getElementById('minOneDown').onclick = () => { if (!running) { minOne = adjust(minOne, 9, -1); flipDigit(minOneEl); updateDisplay(); } };
+document.getElementById('secTenUp').onclick = () => { if (!running) { secTen = adjust(secTen, 5, 1); flipDigit(secTenEl); updateDisplay(); } };
+document.getElementById('secTenDown').onclick = () => { if (!running) { secTen = adjust(secTen, 5, -1); flipDigit(secTenEl); updateDisplay(); } };
+document.getElementById('secOneUp').onclick = () => { if (!running) { secOne = adjust(secOne, 9, 1); flipDigit(secOneEl); updateDisplay(); } };
+document.getElementById('secOneDown').onclick = () => { if (!running) { secOne = adjust(secOne, 9, -1); flipDigit(secOneEl); updateDisplay(); } };
+
+function getTotal() {
+  return minTen * 600 + minOne * 60 + secTen * 10 + secOne;
+}
+
+function setFromTotal(t) {
+  if (t <= 0) { minTen = 0; minOne = 0; secTen = 0; secOne = 0; return; }
+  minTen = Math.floor(t / 600);
+  minOne = Math.floor((t % 600) / 60);
+  secTen = Math.floor((t % 60) / 10);
+  secOne = t % 10;
+}
+
+function smoothstep(t) { return t * t * (3 - 2 * t); }
+
+function applyThemeColor() {
+  const t = themeColorMap[themeColor];
+  document.documentElement.style.setProperty('--theme-r', t.rgb[0]);
+  document.documentElement.style.setProperty('--theme-g', t.rgb[1]);
+  document.documentElement.style.setProperty('--theme-b', t.rgb[2]);
+  startBtn.style.background = `rgba(${Math.round(t.rgb[0]*0.15)}, ${Math.round(t.rgb[1]*0.2)}, ${Math.round(t.rgb[2]*0.15)}, 0.9)`;
+  startBtn.style.borderColor = `rgba(${t.rgb[0]}, ${t.rgb[1]}, ${t.rgb[2]}, 0.6)`;
+  startBtn.style.color = `rgba(${t.text[0]}, ${t.text[1]}, ${t.text[2]}, 0.95)`;
+}
+
+function applyCustomColors() {
+  const glowRGB = glowColorMap[glowColor];
+  const textRGB = textColorMap[textColor];
+  startBtn.style.background = 'rgba(20, 40, 30, 0.8)';
+  startBtn.style.borderColor = 'rgba(120, 180, 140, 0.4)';
+  startBtn.style.color = 'rgba(140, 210, 160, 0.9)';
+  fsTime.style.color = `rgba(${textRGB[0]}, ${textRGB[1]}, ${textRGB[2]}, 0.8)`;
+  fsTime.style.textShadow = `0 0 30px rgba(${textRGB[0]}, ${textRGB[1]}, ${textRGB[2]}, 0.2)`;
+}
+
+function startProgressLoop() {
+  if (progressRafId) return;
+  function loop() {
+    if (!running) { progressRafId = null; return; }
+    const elapsed = (Date.now() - startTime) / 1000;
+    const remaining = Math.max(0, totalSeconds - elapsed);
+    const pct = remaining / initialTotalSeconds;
+    progressBar.style.width = (pct * 100) + '%';
+    let warnT = 0;
+    if (remaining <= 5 && initialTotalSeconds > 5) warnT = 1 - (remaining / 5);
+    else if (remaining <= 5) warnT = 1;
+    const rgb = glowColorMap[glowColor];
+    if (warnT > 0) {
+      const r = Math.round(rgb[0] + (220 - rgb[0]) * warnT);
+      const g = Math.round(rgb[1] + (40 - rgb[1]) * warnT);
+      const b = Math.round(rgb[2] + (40 - rgb[2]) * warnT);
+      progressBar.style.background = `linear-gradient(90deg, rgba(${r},${g},${b},0.95), rgba(${Math.min(r+40,255)},${Math.min(g+40,255)},${Math.min(b+40,255)},0.5), rgba(${r},${g},${b},0.3))`;
+    } else {
+      progressBar.style.background = `linear-gradient(90deg, rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.95), rgba(${Math.min(rgb[0]+40,255)},${Math.min(rgb[1]+40,255)},${Math.min(rgb[2]+40,255)},0.5), rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.3))`;
+    }
+    progressRafId = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function stopProgressLoop() {
+  if (progressRafId) { cancelAnimationFrame(progressRafId); progressRafId = null; }
+}
+
+function updateGlow(remaining) {
+  if (initialTotalSeconds <= 0) return;
+  const pct = remaining / initialTotalSeconds;
+  let warnT = 0;
+  if (remaining <= 5 && initialTotalSeconds > 5) warnT = 1 - (remaining / 5);
+  else if (remaining <= 5) warnT = 1;
+
+  // 主题色模式：始终写入CSS变量
+  if (colorMode === 'theme') {
+    themeGlowLayer.classList.add('active');
+    const baseRGB = themeColorMap[themeColor].rgb;
+    if (warnT > 0) {
+      const r = Math.round(baseRGB[0] + (220 - baseRGB[0]) * warnT);
+      const g = Math.round(baseRGB[1] + (40 - baseRGB[1]) * warnT);
+      const b = Math.round(baseRGB[2] + (40 - baseRGB[2]) * warnT);
+      document.documentElement.style.setProperty('--theme-r', r);
+      document.documentElement.style.setProperty('--theme-g', g);
+      document.documentElement.style.setProperty('--theme-b', b);
+    } else {
+      document.documentElement.style.setProperty('--theme-r', baseRGB[0]);
+      document.documentElement.style.setProperty('--theme-g', baseRGB[1]);
+      document.documentElement.style.setProperty('--theme-b', baseRGB[2]);
+    }
+    const spread = Math.round(60 + 60 * pct);
+    screenGlow.style.boxShadow = `inset 0 0 ${spread}px rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, ${0.15 + 0.2 * pct})`;
+  } else if (colorMode === 'custom' && displayMode === 'fluid') {
+    themeGlowLayer.classList.add('active');
+    const baseRGB = glowColorMap[glowColor];
+    if (warnT > 0) {
+      const r = Math.round(baseRGB[0] + (220 - baseRGB[0]) * warnT);
+      const g = Math.round(baseRGB[1] + (40 - baseRGB[1]) * warnT);
+      const b = Math.round(baseRGB[2] + (40 - baseRGB[2]) * warnT);
+      document.documentElement.style.setProperty('--theme-r', r);
+      document.documentElement.style.setProperty('--theme-g', g);
+      document.documentElement.style.setProperty('--theme-b', b);
+    } else {
+      document.documentElement.style.setProperty('--theme-r', baseRGB[0]);
+      document.documentElement.style.setProperty('--theme-g', baseRGB[1]);
+      document.documentElement.style.setProperty('--theme-b', baseRGB[2]);
+    }
+  } else {
+    themeGlowLayer.classList.remove('active');
+  }
+
+  if (colorMode === 'custom' && displayMode === 'glow') {
+    const baseRGB = glowColorMap[glowColor];
+    const spread = Math.round(60 + 60 * pct);
+    const alpha = 0.15 + 0.2 * pct;
+    const raw = (Math.sin(Date.now() / 2000) + 1) / 2;
+    const intensity = 0.6 + 0.4 * smoothstep(raw);
+    if (warnT > 0) {
+      const r = Math.round(baseRGB[0] + (220 - baseRGB[0]) * warnT);
+      const g = Math.round(baseRGB[1] + (40 - baseRGB[1]) * warnT);
+      const b = Math.round(baseRGB[2] + (40 - baseRGB[2]) * warnT);
+      screenGlow.style.boxShadow = `inset 0 0 ${spread}px rgba(${r}, ${g}, ${b}, ${alpha * (intensity + warnT * 0.3)}), inset 0 0 ${Math.round(spread * 1.8)}px rgba(${r}, ${g}, ${b}, ${alpha * 0.5 * (intensity + warnT * 0.3)}), inset 0 0 ${Math.round(spread * 2.8)}px rgba(${r}, ${g}, ${b}, ${alpha * 0.2 * (intensity + warnT * 0.3)})`;
+    } else {
+      screenGlow.style.boxShadow = `inset 0 0 ${spread}px rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, ${alpha * intensity}), inset 0 0 ${Math.round(spread * 1.8)}px rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, ${alpha * 0.5 * intensity}), inset 0 0 ${Math.round(spread * 2.8)}px rgba(${baseRGB[0]}, ${baseRGB[1]}, ${baseRGB[2]}, ${alpha * 0.2 * intensity})`;
+    }
+  } else if (colorMode !== 'theme') {
+    screenGlow.style.boxShadow = 'none';
+  }
+}
+
+function updateTextColor(remaining) {
+  let warnT = 0;
+  if (remaining <= 5 && initialTotalSeconds > 5) warnT = 1 - (remaining / 5);
+  else if (remaining <= 5) warnT = 1;
+
+  if (colorMode === 'theme') {
+    const textRGB = themeColorMap[themeColor].text;
+    if (warnT > 0) {
+      const r = Math.round(textRGB[0] + (220 - textRGB[0]) * warnT);
+      const g = Math.round(textRGB[1] + (40 - textRGB[1]) * warnT);
+      const b = Math.round(textRGB[2] + (40 - textRGB[2]) * warnT);
+      fsTime.style.color = `rgba(${r}, ${g}, ${b}, 0.95)`;
+      fsTime.style.textShadow = `0 0 ${30 + warnT * 20}px rgba(${r}, ${g}, ${b}, ${0.3 + warnT * 0.3})`;
+    } else {
+      fsTime.style.color = `rgba(${textRGB[0]}, ${textRGB[1]}, ${textRGB[2]}, 0.95)`;
+      fsTime.style.textShadow = `0 0 30px rgba(${textRGB[0]}, ${textRGB[1]}, ${textRGB[2]}, 0.3)`;
+    }
+  } else {
+    const rgb = textColorMap[textColor];
+    if (warnT > 0) {
+      const r = Math.round(rgb[0] + (220 - rgb[0]) * warnT);
+      const g = Math.round(rgb[1] + (40 - rgb[1]) * warnT);
+      const b = Math.round(rgb[2] + (40 - rgb[2]) * warnT);
+      fsTime.style.color = `rgba(${r}, ${g}, ${b}, 0.95)`;
+      fsTime.style.textShadow = `0 0 ${30 + warnT * 20}px rgba(${r}, ${g}, ${b}, ${0.2 + warnT * 0.4})`;
+    } else {
+      fsTime.style.color = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.8)`;
+      fsTime.style.textShadow = `0 0 30px rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.2)`;
+    }
+  }
+}
+
+// ── 优化2：tick() 加 running 守卫，防止退出后继续跑 ──
+function tick() {
+  if (!running) return;
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  const remaining = Math.max(0, totalSeconds - elapsed);
+
+  setFromTotal(remaining);
+  updateDisplay();
+  updateFsDisplay();
+  updateGlow(remaining);
+  updateTextColor(remaining);
+
+  if (remaining !== lastTickSecond) {
+    lastTickSecond = remaining;
+    if (remaining <= 5 && remaining > 0) fsTime.classList.add('blink-breathe');
+    if (remaining > 0 && remaining <= 5) playTick();
+    if (remaining <= 0) {
+      playFinalBeep();
+      fsTime.classList.remove('blink-breathe');
+      running = false;
+      startBtn.textContent = i18n[currentLangKey].startBtn;
+      endDialog.classList.add('active');
+      themeGlowLayer.classList.remove('active');
+      progressBar.classList.remove('active');
+      stopProgressLoop();
+      return;
+    }
+  }
+  if (running) rafId = requestAnimationFrame(tick);
+}
+
+startBtn.onclick = () => {
+  if (!running) {
+    totalSeconds = getTotal();
+    if (totalSeconds <= 0) return;
+    initialTotalSeconds = totalSeconds;
+    startTime = Date.now();
+    lastTickSecond = -1;
+    running = true;
+    startBtn.textContent = i18n[currentLangKey].startBtn;
+    fullscreen.classList.add('active');
+    initAudio();
+    updateFsDisplay();
+    if (colorMode === 'custom' && displayMode === 'progress') {
+      progressBar.classList.add('active');
+      startProgressLoop();
+    } else if (colorMode === 'theme' || (colorMode === 'custom' && displayMode === 'fluid')) {
+      applyThemeColor();
+    } else {
+      applyCustomColors();
+    }
+    tick();
+  }
+};
+
+// ── 优化3：退出时严格清空状态 ──
+function doExitFullscreen() {
+  running = false;
+  if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+  stopProgressLoop();
+  themeGlowLayer.classList.remove('active');
+  progressBar.classList.remove('active');
+  screenGlow.style.boxShadow = 'none';
+  fullscreen.classList.remove('active');
+  setFromTotal(initialTotalSeconds);
+  updateDisplay();
+  fsTime.classList.remove('blink-breathe');
+  if (colorMode === 'custom') applyCustomColors(); else applyThemeColor();
+}
+
+exitBtn.addEventListener('click', (e) => {
+  e.preventDefault(); e.stopPropagation();
+  if (running) confirmDialog.classList.add('active'); else doExitFullscreen();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && fullscreen.classList.contains('active')) {
+    if (running) confirmDialog.classList.add('active'); else doExitFullscreen();
+  }
+});
+
+endYes.onclick = () => { endDialog.classList.remove('active'); doExitFullscreen(); };
+endNo.onclick = () => { endDialog.classList.remove('active'); };
+confirmYes.onclick = () => { confirmDialog.classList.remove('active'); doExitFullscreen(); };
+confirmNo.onclick = () => { confirmDialog.classList.remove('active'); };
+
+confirmDialog.addEventListener('click', (e) => {
+  if (e.target === confirmDialog) confirmDialog.classList.remove('active');
+});
+
+endDialog.addEventListener('click', (e) => {
+  if (e.target === endDialog) endDialog.classList.remove('active');
+});
+
+applyI18n();
+applyCustomColors();
+updateDisplay();
+</script>
+</body>
+</html>
